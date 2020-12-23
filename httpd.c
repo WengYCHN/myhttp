@@ -10,7 +10,7 @@
 int get_status(int r, const char* status_info);
 int create_socket();
 struct sockaddr_in create_protocol_cluster();
-void bind_socket(int socket,struct sockaddr_in addr);
+void bind_socket(int socket, struct sockaddr_in addr);
 void create_listener(int socket);
 void handle_request(int socket);
 
@@ -18,15 +18,16 @@ int main(void)
 {
         int server_socket = create_socket();
         struct sockaddr_in addr = create_protocol_cluster();
-        bind_socket(server_socket,addr);
+
+        bind_socket(server_socket, addr);
         create_listener(server_socket);
 
         struct sockaddr_in cAddr;
         int cAddr_len = sizeof(cAddr);
         while(1)
         {
-                int client_socket = accept(server_socket,(struct sockaddr*)&cAddr,(socklen_t*)&cAddr_len);
-                if(get_status(client_socket,"Connection") == -1) return;
+                int client_socket = accept(server_socket, (struct sockaddr*)&cAddr, (socklen_t*)&cAddr_len);
+                if(get_status(client_socket, "Connection") == -1) return;
                 handle_request(client_socket);
         }
 
@@ -42,48 +43,48 @@ int get_status(int r, const char* status_info)
                 printf("ERROR:%s failed.\n", status_info);
                 return -1;
         }
-        printf("INFO:%s successful.\n",status_info);
+        printf("INFO:%s successful.\n", status_info);
         return 0;
 }
 
 int create_socket()
 {
-        int server_socket = socket(AF_INET,SOCK_STREAM,0);
-        if(get_status(server_socket,"Create socket") == -1) return;
+        int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if(get_status(server_socket, "Create socket") == -1) return;
         return server_socket;
 }
 
 struct sockaddr_in create_protocol_cluster()
 {
         struct sockaddr_in addr;
-        bzero(&addr,sizeof(addr));
+        bzero(&addr, sizeof(addr));
         addr.sin_family = AF_INET;
         addr.sin_port = htons(80);
-        addr.sin_addr.s_addr = inet_addr("192.168.30.100");
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
         return addr;
 }
 
 void bind_socket(int socket,struct sockaddr_in addr)
 {
         int r = bind(socket, (struct sockaddr*)&addr, sizeof(addr));
-        if(get_status(r,"Bind") == -1) return;
+        if(get_status(r, "Bind") == -1) return;
 }
 
 void create_listener(int socket)
 {
         int r = listen(socket,10);
-        if(get_status(r,"Listen") == -1) return;
+        if(get_status(r, "Listen") == -1) return;
 }
 
 void handle_request(int socket)
 {
         char buff[1024*1024] = {0};
-        int nread = read(socket,buff,sizeof(buff));
+        int nread = read(socket,buff, sizeof(buff));
         printf("%s", buff);
 
         char filename[10] = {0};
-        sscanf(buff,"GET /%s",filename);
-        printf("INFO:Request file is %s\n",filename);
+        sscanf(buff, "GET /%s", filename);
+        printf("INFO: Request file is %s\n", filename);
 
         char *mime = NULL;
         if(strstr(filename, ".html"))   mime = "text/html";
@@ -92,14 +93,14 @@ void handle_request(int socket)
         else if(strstr(filename, ".css")) mime = "text/css";
 
         char response[1024*1024] = {0};
-        sprintf(response,"HTTP/1.1 200 OK\r\nContent-Type: %s\r\n\r\n",mime);
+        sprintf(response, "HTTP/1.1 200 OK\r\nContent-Type: %s\r\n\r\n", mime);
         int head_len = strlen(response);
 
 
-        int file = open(filename,O_RDONLY);
-        int file_len = read(file,response+head_len,sizeof(response)-head_len);
+        int file = open(filename, O_RDONLY);
+        int file_len = read(file, response + head_len, sizeof(response) - head_len);
 
-        write(socket,response,head_len+file_len);
+        write(socket, response, head_len + file_len);
         close(socket);
 }
 
